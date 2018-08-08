@@ -5,6 +5,11 @@ P0
 
 P1
 
+* Use cloud-build-local.  Looks like it needs a couple of dozen changes.
+    - Get benefits from running commands through powershell.exe.  e.g., support for ls, ~, etc.
+    - docker.sock the most obvious one.
+    - But e.g. hacky use of sed needs thoughtful replacement.
+
 Bind mounting:
 * Looks like Docker 17.09.0-ce-rc1 or higher is required - maybe on host as well as client.
 * See https://github.com/StefanScherer/insider-docker-machine/pull/1.
@@ -12,9 +17,6 @@ Bind mounting:
 * To upgrade the Docker daemon, have to do manually.  MS only knows version 17.06.
 * https://docs.docker.com/install/windows/docker-ee/#use-a-script-to-install-docker-ee
 
-
-* Fallback plan: https://docs.microsoft.com/en-us/virtualization/windowscontainers/management/manage_remotehost
-* i.e., use dockertls to create certificates, then listen on TCP socket.  But requires changes to Dockerfile inside docker-windows container, which is gross.
 
 Revised plan
 • Two options: BYO Windows server, or I'll start one for you
