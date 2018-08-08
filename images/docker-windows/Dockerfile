@@ -14,4 +14,4 @@ COPY --from=builder ["docker\\docker.exe", "C:\\Program Files\\docker\\docker.ex
 
 RUN setx PATH "%PATH%;C:\Program Files\docker"
 
-ENTRYPOINT ["docker.exe", "-H", "winvm2:2375"]
+ENTRYPOINT docker.exe $env:DOCKERARGS

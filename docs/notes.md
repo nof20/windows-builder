@@ -1,15 +1,34 @@
+P0
+* Build and push a Docker container to GCR
+* Build and push one other container, e.g. Go
+* Create Windows server automatically
+
+P1
+
+Bind mounting:
+* Looks like Docker 17.09.0-ce-rc1 or higher is required - maybe on host as well as client.
+* See https://github.com/StefanScherer/insider-docker-machine/pull/1.
+* docker run -v '\\.\pipe\docker_engine:\\.\pipe\docker_engine' ...
+* To upgrade the Docker daemon:
+
+# Check version
+Get-Package -Name Docker -ProviderName DockerMsftProvider
+# Find out what's available
+Find-Package -Name Docker -ProviderName DockerMsftProvider
+# Upgrade
+Install-Package -Name Docker -ProviderName DockerMsftProvider -Update -Force, followed by Start-Service Docker
+
+* Fallback plan: https://docs.microsoft.com/en-us/virtualization/windowscontainers/management/manage_remotehost
+* i.e., use dockertls to create certificates, then listen on TCP socket.  But requires changes to Dockerfile inside docker-windows container, which is gross.
+
 Revised plan
 • Two options: BYO Windows server, or I'll start one for you
-
-gcloud beta compute instances create winvm2 --image=windows-server-1803-dc-core-for-containers-v20180802 --image-project=windows-cloud --machine-type n1-standard-4 --scopes=cloud-platform,storage-full
-gcloud --quiet beta compute reset-windows-password winvm2
-
 • server object has IP, username and password. And embedded GCE object if required.
 • GCE object suould have methods attached to it to do stuff. All state should be encoded within itself
 • Program flow:
     - Start server if required
     - copy across workspace using WinRMCP
-    - Run container build with --privileged and connection to host Docker sock (see Kokoro build). Bind mount local workspace.  Maybe start with this, prove it works first. This is the core of the problem.
+    - Run container build with connection to host Docker sock over TCP. Mount local workspace in C:\workspace.  Maybe start with this, prove it works first. This is the core of the problem.
     - Last step should be Docker push. Or, have another env field to support that
     - copy workspace back
 • Much simpler than previous attempts
@@ -46,6 +65,8 @@ sc config docker binpath= "\"C:\Program Files\docker\dockerd.exe\" --run-service
 ^^ enables unauthenticated access to Docker daemon on port 2375
 
 Docs say you can provide multiple -H.  https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-socket-option
+
+Looks like the pipe is actually npipe:////./pipe/docker_engine - not \\.\... as the docs say.
 
 In Powershell:
 New-NetFirewallRule -DisplayName 'Docker' -Profile @('Domain', 'Private', 'Public') -Direction Inbound -Action Allow -Protocol TCP -LocalPort @('2375')
