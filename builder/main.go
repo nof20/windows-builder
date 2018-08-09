@@ -20,9 +20,11 @@ var (
 	hostname = flag.String("hostname", "localhost", "Hostname of remote Windows server")
 	username = flag.String("username", "ContainerAdministrator", "Username on remote Windows server")
 	password = flag.String("password", "", "Password on remote Windows server")
+	command  = flag.String("command", "", "Command to run on remote Windows server")
 )
 
 func main() {
+	log.Print("Starting Windows builder")
 	// Parse flags for host, username, password
 	flag.Parse()
 	r := &Remote{
@@ -31,10 +33,12 @@ func main() {
 		password: password,
 	}
 	// Copy workspace to remote machine
+	log.Print("Copying workspace")
 	r.copy()
 
 	// Execute on remote
-	r.run("ipconfig /all")
+	log.Printf("Executing command %s", *command)
+	r.run(*command)
 }
 
 // Remote represents a remote Windows server.

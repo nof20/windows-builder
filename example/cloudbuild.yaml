@@ -1,4 +1,7 @@
 steps:
 - name: 'gcr.io/$PROJECT_ID/windows-builder'
-  args: [ '--hostname', 'winvm'
+  args: [ '--hostname', '35.224.171.166',
+          '--username', 'n_o_franklin',
+          '--password', 'F-NhLMU.z@-*h?4',
+          '--command', 'hello.bat' ]
 

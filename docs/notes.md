@@ -5,6 +5,7 @@ P0
 
 P1
 
+* Move from port 5985 (HTTP) to 5986 (HTTPS)
 * Use cloud-build-local.  Looks like it needs a couple of dozen changes.
     - Get benefits from running commands through powershell.exe.  e.g., support for ls, ~, etc.
     - docker.sock the most obvious one.
