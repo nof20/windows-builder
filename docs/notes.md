@@ -45,7 +45,7 @@ https://github.com/jenkinsci/docker/pull/582/files
 * Official MS docs: https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/configure-docker-daemon
 
 
-Providing a startup script.  Script (.bat) contents:
+Providing a startup script.  Powershell script contents:
 
 winrm set winrm/config/Service/Auth @{Basic="true”}
 winrm set winrm/config/Service @{AllowUnencrypted="true”}
