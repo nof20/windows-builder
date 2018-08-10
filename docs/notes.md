@@ -30,17 +30,17 @@ Bind mounting:
 
 
 Revised plan
-• Two options: BYO Windows server, or I'll start one for you
-• server object has IP, username and password. And embedded GCE object if required.
-• GCE object suould have methods attached to it to do stuff. All state should be encoded within itself
-• Program flow:
+* Two options: BYO Windows server, or I'll start one for you
+* server object has IP, username and password. And embedded GCE object if required.
+* GCE object suould have methods attached to it to do stuff. All state should be encoded within itself
+* Program flow:
     - Start server if required
     - copy across workspace using WinRMCP
     - Run container build with connection to host Docker sock. Run Local Builder on windows.yaml.
     - Last step should be Docker push. Or, have another env field to support that
     - Copy workspace back.
-• Much simpler than previous designs.
-• Need to bootstrap a Windows docker container if it doesn't already exist. 
+* Much simpler than previous designs.
+* Need to bootstrap a Windows docker container if it doesn't already exist. 
 
 Other notes:
 * Powershell container for Linux at microsoft/powershell. e.g. docker run -it microsoft/powershell
@@ -57,13 +57,16 @@ https://github.com/jenkinsci/docker/pull/582/files
 
 Providing a startup script.  Note cmd script contents, not Powershell:
 
+```
 winrm set winrm/config/Service/Auth @{Basic="true”}
 winrm set winrm/config/Service @{AllowUnencrypted="true”}
+```
 
 For more info on setting up self-signed certificates, see https://github.com/diyan/pywinrm.
 
 Equivalent Python, which works:
 
+```python
 from winrm.protocol import Protocol
 p = Protocol(
     endpoint='https://35.225.23.78:5986/wsman',
@@ -75,8 +78,9 @@ command_id = p.run_command(shell_id, 'ipconfig', ['/all'])
 std_out, std_err, status_code = p.get_command_output(shell_id, command_id)
 p.cleanup_command(shell_id, command_id)
 p.close_shell(shell_id)
+```
 
 Things to notice:
 * Must disable server certificate validation
 * Uses HTTPS over port 5986.  5985 does not allow connections, despite AllowUnencrypted="true".
-* 
+
