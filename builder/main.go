@@ -43,7 +43,11 @@ func main() {
 
 	// Execute on remote
 	log.Printf("Executing command %s", *command)
-	r.run(*command)
+	err = r.run(*command)
+	if err != nil {
+		log.Printf("Error executing command: %+v", err)
+		os.Exit(1)
+	}
 }
 
 // Remote represents a remote Windows server.
