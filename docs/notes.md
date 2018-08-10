@@ -8,14 +8,18 @@ P0 Outstanding
 * Build and push one other container, e.g. Go
 * Create Windows server automatically
 * Support for KMS-encrypted passwords: https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials
+* Build better examples, e.g. one Go, one C# or something
+* Minimal usage documentation
 
 P1 Outstanding
 
+* Consider implementing minimal set of yaml features.  e.g., step, args, image push.
 * Use self-signed certificates for WinRM
 * Use cloud-build-local.  Looks like it needs a couple of dozen changes.
     - Get benefits from running commands through powershell.exe.  e.g., support for ls, ~, etc.
     - docker.sock the most obvious one.
     - But e.g. hacky use of sed needs thoughtful replacement.
+    - Runs fake metadata server in local Docker: would need to be replaced.  Code not public.
 
 Bind mounting:
 * Looks like Docker 17.09.0-ce-rc1 or higher is required - maybe on host as well as client.
