@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -34,7 +35,11 @@ func main() {
 	}
 	// Copy workspace to remote machine
 	log.Print("Copying workspace")
-	r.copy()
+	err := r.copy()
+	if err != nil {
+		log.Printf("Error copying workspace: %+v", err)
+		os.Exit(1)
+	}
 
 	// Execute on remote
 	log.Printf("Executing command %s", *command)
@@ -49,9 +54,10 @@ type Remote struct {
 }
 
 func (r *Remote) copy() error {
-	c, err := winrmcp.New(*r.hostname, &winrmcp.Config{
+	hostport := fmt.Sprintf("%s:5986", *hostname)
+	c, err := winrmcp.New(hostport, &winrmcp.Config{
 		Auth:                  winrmcp.Auth{User: *r.username, Password: *r.password},
-		Https:                 false,
+		Https:                 true,
 		Insecure:              true,
 		TLSServerName:         "",
 		CACertBytes:           nil,
@@ -59,15 +65,20 @@ func (r *Remote) copy() error {
 		MaxOperationsPerShell: 15,
 	})
 	if err != nil {
+		log.Printf("Error creating connection to remote for copy: %+v", err)
+		return err
+	}
+	err = c.Copy("/workspace", `C:\workspace`)
+	if err != nil {
 		log.Printf("Error copying workspace to remote: %+v", err)
 		return err
 	}
-	return c.Copy("/workspace", `C:\workspace`)
+	return nil
 }
 
 func (r *Remote) run(command string) error {
 	stdin := bytes.NewBufferString(command)
-	endpoint := winrm.NewEndpoint(*r.hostname, 5985, false, false, nil, nil, nil, 0)
+	endpoint := winrm.NewEndpoint(*r.hostname, 5986, true, true, nil, nil, nil, 0)
 	w, err := winrm.NewClient(endpoint, *r.username, *r.password)
 	if err != nil {
 		log.Printf("Error creating remote client: %+v", err)
@@ -79,7 +90,7 @@ func (r *Remote) run(command string) error {
 		return err
 	}
 	var cmd *winrm.Command
-	cmd, err = shell.Execute("cmd.exe")
+	cmd, err = shell.Execute(command)
 	if err != nil {
 		log.Printf("Error executing remote command: %+v", err)
 		return err

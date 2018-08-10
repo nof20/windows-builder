@@ -1,11 +1,17 @@
-P0
+Complete
+* Build and push a bare MVP working Windows Builder to GCR
 * Build and push a Docker container to GCR
+* Understand and prototype Windows Docker bind mounting
+
+P0 Outstanding
+* cd into workspace directory before executing command
 * Build and push one other container, e.g. Go
 * Create Windows server automatically
+* Support for KMS-encrypted passwords: https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials
 
-P1
+P1 Outstanding
 
-* Move from port 5985 (HTTP) to 5986 (HTTPS)
+* Use self-signed certificates for WinRM
 * Use cloud-build-local.  Looks like it needs a couple of dozen changes.
     - Get benefits from running commands through powershell.exe.  e.g., support for ls, ~, etc.
     - docker.sock the most obvious one.
@@ -45,7 +51,28 @@ https://github.com/jenkinsci/docker/pull/582/files
 * Official MS docs: https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/configure-docker-daemon
 
 
-Providing a startup script.  Powershell script contents:
+Providing a startup script.  Note cmd script contents, not Powershell:
 
 winrm set winrm/config/Service/Auth @{Basic="true”}
 winrm set winrm/config/Service @{AllowUnencrypted="true”}
+
+For more info on setting up self-signed certificates, see https://github.com/diyan/pywinrm.
+
+Equivalent Python, which works:
+
+from winrm.protocol import Protocol
+p = Protocol(
+    endpoint='https://35.225.23.78:5986/wsman',
+    username=r'n_o_franklin',
+    password=*,
+    server_cert_validation='ignore')
+shell_id = p.open_shell()
+command_id = p.run_command(shell_id, 'ipconfig', ['/all'])
+std_out, std_err, status_code = p.get_command_output(shell_id, command_id)
+p.cleanup_command(shell_id, command_id)
+p.close_shell(shell_id)
+
+Things to notice:
+* Must disable server certificate validation
+* Uses HTTPS over port 5986.  5985 does not allow connections, despite AllowUnencrypted="true".
+* 
