@@ -8,9 +8,11 @@ Set-Variable -name GIT_URL -value "https://github.com/git-for-windows/git/releas
 Invoke-WebRequest -Uri $GIT_URL -OutFile git.zip;
 
 echo "Downloading Go 1.10";
-Set-Variable -name GO_URL -value "https://dl.google.com/go/go1.10.3.windows-386.msi";
-Invoke-WebRequest -Uri $GO_URL -Outfile go.msi;
+Set-Variable -name GO_URL -value "https://dl.google.com/go/go1.10.3.windows-386.zip";
+Invoke-WebRequest -Uri $GO_URL -Outfile go.zip;
 
 echo "Running Docker build";
 docker build -t gcr.io/$projectID/go-windows .;
-docker push gcr.io/$projectID/go-windows;
+if ($?) {
+    docker push gcr.io/$projectID/go-windows;
+}

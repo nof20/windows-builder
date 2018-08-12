@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	copyTimeout = 300 * time.Second
+	copyTimeout = 5 * time.Minute
+	runTimeout  = 5 * time.Minute
 )
 
 // Remote represents a remote Windows server.
@@ -30,8 +31,6 @@ func (r *Remote) Wait() error {
 		err := r.Run("ver")
 		if err == nil {
 			return nil
-		} else {
-			log.Printf("Error: %+v", err)
 		}
 		time.Sleep(10 * time.Second)
 	}
@@ -61,14 +60,14 @@ func (r *Remote) Copy() error {
 	}
 
 	// Flush stdout
-	fmt.Print("\n")
+	fmt.Println("")
 	return nil
 }
 
 // Run a command on the Windows remote.
 func (r *Remote) Run(command string) error {
 	cmdstring := fmt.Sprintf(`cd c:\workspace & %s`, command)
-	endpoint := winrm.NewEndpoint(*r.Hostname, 5986, true, true, nil, nil, nil, 0)
+	endpoint := winrm.NewEndpoint(*r.Hostname, 5986, true, true, nil, nil, nil, runTimeout)
 	w, err := winrm.NewClient(endpoint, *r.Username, *r.Password)
 	if err != nil {
 		return err
