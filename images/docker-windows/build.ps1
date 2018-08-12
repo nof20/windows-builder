@@ -1,4 +1,5 @@
-$projectID = gcloud config get-value project
-gcloud --quiet auth configure-docker;
+$projectID = gcloud config get-value project;
 docker build -t gcr.io/$projectID/docker-windows .;
-docker push gcr.io/$projectID/docker-windows;
+if ($?) {
+    docker push gcr.io/$projectID/docker-windows;
+}

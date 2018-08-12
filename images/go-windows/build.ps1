@@ -11,6 +11,8 @@ echo "Downloading Go 1.10";
 Set-Variable -name GO_URL -value "https://dl.google.com/go/go1.10.3.windows-386.zip";
 Invoke-WebRequest -Uri $GO_URL -Outfile go.zip;
 
+gcloud --quiet auth configure-docker;
+
 echo "Running Docker build";
 docker build -t gcr.io/$projectID/go-windows .;
 if ($?) {
