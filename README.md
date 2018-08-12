@@ -56,6 +56,8 @@ Starting an ephemeral VM on Compute Engine takes about 3 min 31 sec, broken down
 
 Frequent builds will benefit from creating a persistent Windows VM.  To do this, see `scripts/start_windows.sh`.
 
+Downloading and expanding archives is a common build step.  While Powershell offers functionality to do this (the `Expand-Archive` cmdlet) there are known performance issues.  See [PowerShell Archive issue #32](https://github.com/PowerShell/Microsoft.PowerShell.Archive/issues/32).
+
 ## Security
 
 `windows-builder` communicates with the remote server using WinRM over HTTPS.  Basic authentication using username and password is currently supported.
