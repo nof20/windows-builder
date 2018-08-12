@@ -28,6 +28,7 @@ func main() {
 			Username: username,
 			Password: password,
 		}
+		log.Printf("Connecting to existing host %s", *r.Hostname)
 	} else {
 		ctx := context.Background()
 		s = builder.NewServer(ctx)

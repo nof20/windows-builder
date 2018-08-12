@@ -29,7 +29,7 @@ steps:
   args: [ '--command', '<command goes here>' ]
 ```
 
-The VM is configured by the builder and then deleted automatically at the end of the build.
+The VM is configured by the builder and then deleted automatically at the end of the build.  Command is executed by `cmd.exe`; in most cases it will be a build script.
 
 To use an existing Windows server instead, also provide the hostname, username and password:
 
@@ -42,7 +42,7 @@ steps:
           '--command', '<command goes here>' ]
 ```
 
-Your server must support Basic Authentication (username and password) and your network must allow access from the internet on TCP port 5986.
+Your server must support Basic Authentication (username and password) and your network must allow access from the internet on TCP port 5986.  Do not submit plaintext passwords in your build configuration: instead, use [encrypted credentials](https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials) secured with Cloud KMS.  In addition, you must clear up your workspace directory after use, and take care to manage concurrent builds.
 
 ## Performance
 
@@ -60,10 +60,20 @@ Frequent builds will benefit from creating a persistent Windows VM.  To do this,
 
 `windows-builder` communicates with the remote server using WinRM over HTTPS.  Basic authentication using username and password is currently supported.
 
-For ephemeral VMs on Compute Engine, the initial password reset is performed [using public key cryptography](https://cloud.google.com/compute/docs/instances/windows/automate-pw-generation).  The cleartext password is never sent over an unencrypted connection, and is stored in memory for the duration of the build.  The latest version of Windows Server 1803 DC Core for Containers (released 2018-08-02) is currently used.
+For ephemeral VMs on Compute Engine, the initial password reset is performed [using public key cryptography](https://cloud.google.com/compute/docs/instances/windows/automate-pw-generation).  The cleartext password is never sent over an unencrypted connection, and is stored in memory for the duration of the build.  
+
+The latest version of Windows Server 1803 DC Core for Containers (patched 2018-08-02) is currently used.
 
 ## Docker builds
 
 Windows supports [two different types](https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-containers/hyperv-container) of containers: "Windows Server containers", similar to the traditional Linux container, and "Hyper-V containers", which rely on Virtual Machines.  This code uses Windows Server containers, and as a result both the major and minor version of Windows must match between container and host.
 
-The package manager in Windows Server 1803 provides Docker 17.06.  However to run a Docker executable inside a Docker container as Cloud Build typically does, version 17.09 or higher is required to bind-mount the named pipe: see [this pull request](https://github.com/StefanScherer/insider-docker-machine/pull/1).  An example Docker container is provided in `images/dokcer-windows`.
+The package manager in Windows Server 1803 provides Docker 17.06.  However to run a Docker executable inside a Docker container as Cloud Build typically does, version 17.09 or higher is required to bind-mount the named pipe: see [this pull request](https://github.com/StefanScherer/insider-docker-machine/pull/1).
+
+Scripts to build the following containers are included:
+
+| Location | Container Name | Contents |
+|----------|----------------|----------|
+| `images/docker-windows` | `docker-windows` | A Docker executable inside a Windows container, for building other Docker containers. |
+| `images/go-windows` | `go-windows` | Go 1.10 (and Git) |
+

@@ -1,12 +1,5 @@
-Complete
-* Build and push a bare MVP working Windows Builder to GCR
-* Build and push a Docker container to GCR
-* Understand and prototype Windows Docker bind mounting
-
 P0 Outstanding
-* cd into workspace directory before executing command
 * Build and push one other container, e.g. Go
-* Create Windows server automatically
 * Support for KMS-encrypted passwords: https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials
 * Build better examples, e.g. one Go, one C# or something
 * Minimal usage documentation
