@@ -1,6 +1,0 @@
-steps:
-- name: 'gcr.io/$PROJECT_ID/windows-builder'
-  args: [ '--hostname', '35.225.23.78',
-          '--username', 'n_o_franklin',
-          '--password', '',
-          '--command', 'C:\workspace\hello.bat' ]

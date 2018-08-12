@@ -10,9 +10,11 @@ P0 Outstanding
 * Support for KMS-encrypted passwords: https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials
 * Build better examples, e.g. one Go, one C# or something
 * Minimal usage documentation
+* Integration test (in cloudbuild.yaml)
 
 P1 Outstanding
 
+* End to end integration test
 * Consider implementing minimal set of yaml features.  e.g., step, args, image push.
 * Use self-signed certificates for WinRM
 * Use cloud-build-local.  Looks like it needs a couple of dozen changes.
