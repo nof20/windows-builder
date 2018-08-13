@@ -1,11 +1,31 @@
-P0 Outstanding
+# Design
+
+High-level design is as follows:
+
+* Customers provide a Windows build machine, or we start one on GCE.
+* GCB workspace is synchronized to `C:\workspace` on the Windows machine.
+* Customers run build steps in containers, as they do at present on GCB.
+* Workspace is synced back.
+
+Windows build steps are provided in a separate YAML file.  This avoids the complexity and potential confusion of having to provide a series of arguments in the original Cloud Build YAML file.
+
+A Docker on Windows build step must also be provided.  
+
+Compatibility:
+
+* TODO(nof20): fill in... 
+
+# Notes
+
+## P0 Outstanding
+
 * Build and push one other container, e.g. Go
 * Support for KMS-encrypted passwords: https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials
 * Build better examples, e.g. one Go, one C# or something
 * Minimal usage documentation
 * Integration test (in cloudbuild.yaml)
 
-P1 Outstanding
+## P1 Outstanding
 
 * End to end integration test
 * Consider implementing minimal set of yaml features.  e.g., step, args, image push.
