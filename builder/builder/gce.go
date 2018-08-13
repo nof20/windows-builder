@@ -3,7 +3,7 @@ package builder
 import (
 	"bytes"
 	"context"
-	crand "crypto/rand"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"encoding/base64"
@@ -12,10 +12,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	mrand "math/rand"
 	"os/exec"
 	"strings"
 	"time"
+
+    "github.com/pborman/uuid"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2/google"
@@ -134,23 +135,10 @@ func (s *Server) NewGCEService(ctx context.Context) error {
 	return nil
 }
 
-// RandomName generates a random name for the GCE VM.
-func RandomName() string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyz"
-	const n = 6 // letters long
-
-	mrand.Seed(time.Now().UnixNano())
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[mrand.Intn(len(letterBytes))]
-	}
-	return fmt.Sprintf("%s-%s", instanceNamePrefix, b)
-}
-
 // NewInstance starts a Windows VM on GCE and returns host, username, password.
 func (s *Server) NewInstance() error {
 	scmd := startupCmd // TODO: find better way to take address of const
-	name := RandomName()
+	name := uuid.New()
 	instance := &compute.Instance{
 		Name:        name,
 		MachineType: prefix + s.projectID + "/zones/" + zone + "/machineTypes/n1-standard-1",
@@ -312,7 +300,7 @@ type WindowsPasswordResponse struct {
 //See https://cloud.google.com/compute/docs/instances/windows/automate-pw-generation
 func (s *Server) ResetWindowsPassword(username string) (string, error) {
 	//Create random key and encode
-	key, err := rsa.GenerateKey(crand.Reader, 2048)
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Printf("Failed to generate random RSA key: %v", err)
 		return "", err
@@ -358,7 +346,6 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 	log.Print("Waiting for Windows password response")
 	timeout := time.Now().Add(time.Minute * 5)
 	hash := sha1.New()
-	random := crand.Reader
 	for time.Now().Before(timeout) {
 		output, err := s.service.Instances.GetSerialPortOutput(s.projectID, zone, s.instance.Name).Port(4).Do()
 		if err != nil {
@@ -377,7 +364,7 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 					log.Printf("Cannot Base64 decode password: %v", err)
 					return "", err
 				}
-				password, err := rsa.DecryptOAEP(hash, random, wpc.key, decodedPassword, nil)
+				password, err := rsa.DecryptOAEP(hash, rand.Reader, wpc.key, decodedPassword, nil)
 				if err != nil {
 					log.Printf("Cannot decrypt password response: %v", err)
 					return "", err
