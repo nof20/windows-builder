@@ -15,8 +15,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-    "github.com/pborman/uuid"
+	
+	"github.com/pborman/uuid"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2/google"
@@ -138,7 +138,7 @@ func (s *Server) newGCEService(ctx context.Context) error {
 // newInstance starts a Windows VM on GCE and returns host, username, password.
 func (s *Server) newInstance() error {
 	scmd := startupCmd // TODO: find better way to take address of const
-	name := uuid.New()
+	name := "windows-builder-" + uuid.New()
 	instance := &compute.Instance{
 		Name:        name,
 		MachineType: prefix + s.projectID + "/zones/" + zone + "/machineTypes/n1-standard-1",
