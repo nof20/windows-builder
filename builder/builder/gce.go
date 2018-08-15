@@ -3,7 +3,7 @@ package builder
 import (
 	"bytes"
 	"context"
-	crand "crypto/rand"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"encoding/base64"
@@ -12,10 +12,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	mrand "math/rand"
 	"os/exec"
 	"strings"
 	"time"
+	
+	"github.com/pborman/uuid"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2/google"
@@ -40,8 +41,8 @@ type Server struct {
 	Remote
 }
 
-// GetProject gets the project ID.
-func GetProject() (string, error) {
+// getProject gets the project ID.
+func getProject() (string, error) {
 	// Test if we're running on GCE.
 	if metadata.OnGCE() {
 		// Use the GCE Metadata service.
@@ -65,10 +66,10 @@ func GetProject() (string, error) {
 	return projectID, nil
 }
 
-//NewServer creates a new Windows server on GCE.
+// NewServer creates a new Windows server on GCE.
 func NewServer(ctx context.Context) *Server {
 	// Get the current project ID.
-	projectID, err := GetProject()
+	projectID, err := getProject()
 	if err != nil {
 		log.Fatalf("Cannot create new server without project ID: %+v", err)
 		return nil
@@ -76,12 +77,12 @@ func NewServer(ctx context.Context) *Server {
 	s := &Server{projectID: projectID}
 
 	log.Printf("Starting GCE service in project %s", projectID)
-	err = s.NewGCEService(ctx)
+	err = s.newGCEService(ctx)
 	if err != nil {
 		log.Fatalf("Failed to start GCE service: %v", err)
 		return nil
 	}
-	err = s.NewInstance()
+	err = s.newInstance()
 	if err != nil {
 		log.Fatalf("Failed to start Windows VM: %v", err)
 		return nil
@@ -89,20 +90,20 @@ func NewServer(ctx context.Context) *Server {
 
 	// Reset password
 	username := "windows-builder"
-	password, err := s.ResetWindowsPassword(username)
+	password, err := s.resetWindowsPassword(username)
 	if err != nil {
 		log.Fatalf("Failed to reset Windows password: %+v", err)
 	}
 
 	// Set firewall rule.
-	err = s.SetFirewallRule()
+	err = s.setFirewallRule()
 	if err != nil {
 		log.Fatalf("Failed to set ingress firewall rule: %v", err)
 	}
 	log.Printf("Set ingress firewall rule successfully")
 
 	// Get IP address.
-	ip, err := s.GetExternalIP()
+	ip, err := s.getExternalIP()
 	if err != nil {
 		log.Fatalf("Failed to get external IP address: %v", err)
 		return nil
@@ -117,8 +118,8 @@ func NewServer(ctx context.Context) *Server {
 	return s
 }
 
-// NewGCEService creates a new Compute service.
-func (s *Server) NewGCEService(ctx context.Context) error {
+// newGCEService creates a new Compute service.
+func (s *Server) newGCEService(ctx context.Context) error {
 	client, err := google.DefaultClient(ctx, compute.ComputeScope)
 	if err != nil {
 		log.Printf("Failed to create Google Default Client: %v", err)
@@ -134,23 +135,10 @@ func (s *Server) NewGCEService(ctx context.Context) error {
 	return nil
 }
 
-// RandomName generates a random name for the GCE VM.
-func RandomName() string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyz"
-	const n = 6 // letters long
-
-	mrand.Seed(time.Now().UnixNano())
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[mrand.Intn(len(letterBytes))]
-	}
-	return fmt.Sprintf("%s-%s", instanceNamePrefix, b)
-}
-
-// NewInstance starts a Windows VM on GCE and returns host, username, password.
-func (s *Server) NewInstance() error {
+// newInstance starts a Windows VM on GCE and returns host, username, password.
+func (s *Server) newInstance() error {
 	scmd := startupCmd // TODO: find better way to take address of const
-	name := RandomName()
+	name := "windows-builder-" + uuid.New()
 	instance := &compute.Instance{
 		Name:        name,
 		MachineType: prefix + s.projectID + "/zones/" + zone + "/machineTypes/n1-standard-1",
@@ -200,7 +188,7 @@ func (s *Server) NewInstance() error {
 		log.Printf("GCE Instances insert call failed: %v", err)
 		return err
 	}
-	err = s.WaitForComputeOperation(op)
+	err = s.waitForComputeOperation(op)
 	if err != nil {
 		log.Printf("Wait for instance start failed: %v", err)
 		return err
@@ -217,8 +205,8 @@ func (s *Server) NewInstance() error {
 	return nil
 }
 
-// RefreshInstance refreshes latest info from GCE into struct.
-func (s *Server) RefreshInstance() error {
+// refreshInstance refreshes latest info from GCE into struct.
+func (s *Server) refreshInstance() error {
 	inst, err := s.service.Instances.Get(s.projectID, zone, s.instance.Name).Do()
 	if err != nil {
 		log.Printf("Could not refresh instance: %v", err)
@@ -238,9 +226,9 @@ func (s *Server) DeleteInstance() error {
 	return nil
 }
 
-// GetExternalIP gets the external IP for an instance.
-func (s *Server) GetExternalIP() (string, error) {
-	err := s.RefreshInstance()
+// getExternalIP gets the external IP for an instance.
+func (s *Server) getExternalIP() (string, error) {
+	err := s.refreshInstance()
 	if err != nil {
 		log.Printf("Error refreshing instance: %+v", err)
 	}
@@ -254,8 +242,8 @@ func (s *Server) GetExternalIP() (string, error) {
 	return "", errors.New("Could not get external NAT IP from list")
 }
 
-// SetFirewallRule allows ingress on WinRM port.
-func (s *Server) SetFirewallRule() error {
+// setFirewallRule allows ingress on WinRM port.
+func (s *Server) setFirewallRule() error {
 	list, err := s.service.Firewalls.List(s.projectID).Do()
 	if err != nil {
 		log.Printf("Could not list GCE firewalls: %+v", err)
@@ -308,11 +296,11 @@ type WindowsPasswordResponse struct {
 	ErrorMessage      string `json:"errorMessage"`
 }
 
-//ResetWindowsPassword securely resets the admin Windows password.
-//See https://cloud.google.com/compute/docs/instances/windows/automate-pw-generation
-func (s *Server) ResetWindowsPassword(username string) (string, error) {
+// resetWindowsPassword securely resets the admin Windows password.
+// See https://cloud.google.com/compute/docs/instances/windows/automate-pw-generation
+func (s *Server) resetWindowsPassword(username string) (string, error) {
 	//Create random key and encode
-	key, err := rsa.GenerateKey(crand.Reader, 2048)
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Printf("Failed to generate random RSA key: %v", err)
 		return "", err
@@ -348,7 +336,7 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 		log.Printf("Failed to set instance metadata: %v", err)
 		return "", err
 	}
-	err = s.WaitForComputeOperation(op)
+	err = s.waitForComputeOperation(op)
 	if err != nil {
 		log.Printf("Compute operation timed out")
 		return "", err
@@ -358,7 +346,6 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 	log.Print("Waiting for Windows password response")
 	timeout := time.Now().Add(time.Minute * 5)
 	hash := sha1.New()
-	random := crand.Reader
 	for time.Now().Before(timeout) {
 		output, err := s.service.Instances.GetSerialPortOutput(s.projectID, zone, s.instance.Name).Port(4).Do()
 		if err != nil {
@@ -377,7 +364,7 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 					log.Printf("Cannot Base64 decode password: %v", err)
 					return "", err
 				}
-				password, err := rsa.DecryptOAEP(hash, random, wpc.key, decodedPassword, nil)
+				password, err := rsa.DecryptOAEP(hash, rand.Reader, wpc.key, decodedPassword, nil)
 				if err != nil {
 					log.Printf("Cannot decrypt password response: %v", err)
 					return "", err
@@ -391,8 +378,8 @@ func (s *Server) ResetWindowsPassword(username string) (string, error) {
 	return "", err
 }
 
-// WaitForComputeOperation waits for a compute operation
-func (s *Server) WaitForComputeOperation(op *compute.Operation) error {
+// waitForComputeOperation waits for a compute operation
+func (s *Server) waitForComputeOperation(op *compute.Operation) error {
 	log.Printf("Waiting for %+v to complete", op.Name)
 	timeout := time.Now().Add(120 * time.Second)
 	for time.Now().Before(timeout) {

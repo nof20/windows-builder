@@ -60,7 +60,7 @@ func (r *Remote) Copy() error {
 	}
 
 	// Flush stdout
-	fmt.Println("")
+	fmt.Println()
 	return nil
 }
 
