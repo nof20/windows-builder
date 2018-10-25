@@ -12,6 +12,7 @@ Grant Compute Engine permissions to your Cloud Build service account:
 gcloud services enable compute.googleapis.com
 export PROJECT=$(gcloud info --format='value(config.project)')
 gcloud projects add-iam-policy-binding $PROJECT --member=serviceAccount:$(gcloud projects describe $PROJECT --format 'value(projectNumber)')@cloudbuild.gserviceaccount.com --role='roles/compute.admin'
+gcloud projects add-iam-policy-binding $PROJECT --member=serviceAccount:$(gcloud projects describe $PROJECT --format 'value(projectNumber)')@cloudbuild.gserviceaccount.com --role='roles/iam.serviceAccountUser'
 ```
 
 Clone this repository and build the builder:
@@ -24,7 +25,7 @@ Then, refer to the builder in your project's `cloudbuild.yaml`.  To spin up an e
 ```yaml
 steps:
 - name: 'gcr.io/$PROJECT_ID/windows-builder'
-  args: [ '--command', '<command goes here>' ]
+  args: [ '<command goes here>' ]
 ```
 
 The VM is configured by the builder and then deleted automatically at the end of the build.  Command is executed by `cmd.exe`; in most cases it will be a build script.
@@ -37,7 +38,7 @@ steps:
   args: [ '--hostname', 'host.domain.net',
           '--username', 'myuser',
           '--password', 's3cret',
-          '--command', '<command goes here>' ]
+          '<command goes here>' ]
 ```
 
 Your server must support Basic Authentication (username and password) and your network must allow access from the internet on TCP port 5986.  Do not submit plaintext passwords in your build configuration: instead, use [encrypted credentials](https://cloud.google.com/cloud-build/docs/securing-builds/use-encrypted-secrets-credentials) secured with Cloud KMS.  In addition, you must clear up your workspace directory after use, and take care to manage concurrent builds.
